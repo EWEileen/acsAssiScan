@@ -25,7 +25,7 @@ jobs:
 
       - name: Run Docker container
         run: |
-          docker run -itd --name=eileenwong/acs:latest -p 8080:80 ACS
+          docker run -itd --name=eileenwong/acs:latest -p 8085:80 ACS
           sleep 10 # Wait for the container to start
 
       - name: Set up Java (required for ZAP)
@@ -42,7 +42,7 @@ jobs:
           sudo mv ZAP_$ZAP_VERSION /opt/zap
 
           # Run ZAP baseline scan on the Dockerized website
-          /opt/zap/zap.sh -cmd -quickurl http://13.229.226.43:8090 -quickout zap-report.html -quickprogress
+          /opt/zap/zap.sh -cmd -quickurl http://13.229.226.43:8085 -quickout zap-report.html -quickprogress
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v3
