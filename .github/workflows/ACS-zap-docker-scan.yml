@@ -1,0 +1,54 @@
+name: OWASP ZAP Docker Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  zap-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        id: docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build pull image
+        run: docker pull eileenwong/acs:latest .
+
+      - name: Run Docker container
+        run: |
+          docker run -itd --name=eileenwong/acs:latest -p 8080:80 ACS
+          sleep 10 # Wait for the container to start
+
+      - name: Set up Java (required for ZAP)
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+
+      - name: Download and run OWASP ZAP
+        run: |
+          # Download ZAP
+          ZAP_VERSION="2.13.0"
+          wget https://github.com/zaproxy/zaproxy/releases/download/v$ZAP_VERSION/ZAP_$ZAP_VERSION\_Linux.tar.gz
+          tar -xzf ZAP_$ZAP_VERSION\_Linux.tar.gz
+          sudo mv ZAP_$ZAP_VERSION /opt/zap
+
+          # Run ZAP baseline scan on the Dockerized website
+          /opt/zap/zap.sh -cmd -quickurl http://13.229.226.43:8090 -quickout zap-report.html -quickprogress
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-report
+          path: zap-report.html
+
+      - name: Stop Docker container
+        run: docker stop eileenwong/acs:latest
